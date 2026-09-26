@@ -20,22 +20,54 @@ import {
   X
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api';
 const CURRENT_ACCOUNT_NUMBER = '6789';
+const DEFAULT_PIN = '1234';
 
 export default function BankingSimulationSystem() {
   // Navigation State
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showBalance, setShowBalance] = useState(true);
 
-  // Live Balances from MongoDB Atlas
-  const [accountHolder, setAccountHolder] = useState('Demo User');
-  const [bankBalance, setBankBalance] = useState(0);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
+  // Balances stored directly in React State (with localStorage persistence)
+  const [bankBalance, setBankBalance] = useState(() => {
+    const saved = localStorage.getItem('bank_sim_bankBalance');
+    return saved !== null ? parseFloat(saved) : 10750000;
+  });
+
+  const [walletBalance, setWalletBalance] = useState(() => {
+    const saved = localStorage.getItem('bank_sim_walletBalance');
+    return saved !== null ? parseFloat(saved) : 250000;
+  });
 
   // Transaction History State
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState(() => {
+    const saved = localStorage.getItem('bank_sim_transactions');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // fallback
+      }
+    }
+    return [
+      { id: 1, name: 'Global Ventures Ltd', date: '3/2/2022, 10:10 pm', amount: 6000000, type: 'Income', source: 'Bank Account' },
+      { id: 2, name: 'Michael Liu', date: '1/2/2022, 09:14 pm', amount: 300000, type: 'Expend', source: 'Virtual Wallet' },
+      { id: 3, name: 'Mary Moore', date: '31/1/2022, 03:07 am', amount: 450000, type: 'Expend', source: 'Virtual Wallet' }
+    ];
+  });
+
+  // Save to localStorage whenever state updates
+  useEffect(() => {
+    localStorage.setItem('bank_sim_bankBalance', bankBalance.toString());
+  }, [bankBalance]);
+
+  useEffect(() => {
+    localStorage.setItem('bank_sim_walletBalance', walletBalance.toString());
+  }, [walletBalance]);
+
+  useEffect(() => {
+    localStorage.setItem('bank_sim_transactions', JSON.stringify(transactions));
+  }, [transactions]);
 
   // Upcoming Reminders State
   const [reminders, setReminders] = useState([
@@ -68,107 +100,59 @@ export default function BankingSimulationSystem() {
     return isNaN(emi) ? 0 : Math.round(emi).toLocaleString('id-ID');
   };
 
-  // Fetch real-time account and transaction records from MongoDB Atlas
-  const fetchBankingData = async () => {
-    try {
-      const [accRes, txRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/account/${CURRENT_ACCOUNT_NUMBER}`),
-        fetch(`${API_BASE_URL}/transactions/${CURRENT_ACCOUNT_NUMBER}`)
-      ]);
-
-      if (accRes.ok) {
-        const accData = await accRes.json();
-        setAccountHolder(accData.accountHolder || 'Demo User');
-        setBankBalance(accData.bankBalance);
-        setWalletBalance(accData.walletBalance);
-      }
-
-      if (txRes.ok) {
-        const txData = await txRes.json();
-        setTransactions(txData.map(item => ({
-          id: item._id || Date.now(),
-          name: item.title,
-          date: new Date(item.date).toLocaleString(),
-          amount: item.amount,
-          type: item.type,
-          source: item.source
-        })));
-      }
-    } catch (error) {
-      console.error('Failed to sync with backend:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBankingData();
-  }, []);
-
-  // Centralized Transaction Handler connected directly to MongoDB API
-  const handleExecuteTransaction = async (e) => {
+  // Pure Client-side Transaction Execution
+  const handleExecuteTransaction = (e) => {
     e.preventDefault();
     const val = parseFloat(formInput.amount);
     if (!val || val <= 0) return alert('Please enter a valid amount.');
-    if (!formInput.pin) return alert('Please enter your 4-digit security PIN (default: 1234).');
 
-    let txType = 'Send Money';
-    let txSource = 'Bank Account';
-    let recipientName = formInput.recipient;
+    if (formInput.pin !== DEFAULT_PIN) {
+      return alert(`Incorrect Security PIN. Default PIN is ${DEFAULT_PIN}`);
+    }
+
+    const nowFormatted = new Date().toLocaleString();
 
     if (activeModal === 'send') {
-      txType = 'Send Money';
-      txSource = 'Bank Account';
-      recipientName = formInput.recipient || 'Transfer Recipient';
+      if (bankBalance < val) return alert('Insufficient Bank Balance.');
+      setBankBalance(prev => prev - val);
+      setTransactions(prev => [
+        { id: Date.now(), name: formInput.recipient || 'Transfer Recipient', date: nowFormatted, amount: val, type: 'Expend', source: 'Bank Account' },
+        ...prev
+      ]);
     } else if (activeModal === 'add') {
-      txType = 'Add Money';
-      txSource = 'Virtual Wallet';
-      recipientName = 'Bank to Wallet Top-Up';
+      if (bankBalance < val) return alert('Insufficient Bank Balance.');
+      setBankBalance(prev => prev - val);
+      setWalletBalance(prev => prev + val);
+      setTransactions(prev => [
+        { id: Date.now(), name: 'Bank to Wallet Top-Up', date: nowFormatted, amount: val, type: 'Income', source: 'Virtual Wallet' },
+        ...prev
+      ]);
     } else if (activeModal === 'cashout') {
-      txType = 'Cash Out';
-      txSource = 'Virtual Wallet';
-      recipientName = `Agent Cash Out (${formInput.recipient})`;
+      if (walletBalance < val) return alert('Insufficient Wallet Balance.');
+      setWalletBalance(prev => prev - val);
+      setTransactions(prev => [
+        { id: Date.now(), name: `Agent Cash Out (${formInput.recipient})`, date: nowFormatted, amount: val, type: 'Expend', source: 'Virtual Wallet' },
+        ...prev
+      ]);
     } else if (activeModal === 'recharge') {
-      txType = 'Mobile Recharge';
-      txSource = 'Virtual Wallet';
-      recipientName = `Mobile Recharge (${formInput.recipient})`;
+      if (walletBalance < val) return alert('Insufficient Wallet Balance.');
+      setWalletBalance(prev => prev - val);
+      setTransactions(prev => [
+        { id: Date.now(), name: `Mobile Recharge (${formInput.recipient})`, date: nowFormatted, amount: val, type: 'Expend', source: 'Virtual Wallet' },
+        ...prev
+      ]);
     } else if (activeModal === 'bill') {
-      txType = 'Bill Payment';
-      txSource = 'Bank Account';
-      recipientName = formInput.utilityType;
+      if (bankBalance < val) return alert('Insufficient Bank Balance.');
+      setBankBalance(prev => prev - val);
+      setTransactions(prev => [
+        { id: Date.now(), name: formInput.utilityType, date: nowFormatted, amount: val, type: 'Expend', source: 'Bank Account' },
+        ...prev
+      ]);
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/transactions/execute`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountNumber: CURRENT_ACCOUNT_NUMBER,
-          type: txType,
-          accountSource: txSource,
-          amount: val,
-          recipientIdentifier: recipientName,
-          pin: formInput.pin
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return alert(data.message || 'Transaction failed');
-      }
-
-      // Refresh live records directly from MongoDB Atlas
-      await fetchBankingData();
-
-      // Reset Modal Form
-      setFormInput({ recipient: '', amount: '', pin: '', utilityType: 'DESCO Electricity', reminderTitle: '', reminderAmount: '' });
-      setActiveModal(null);
-      alert('Transaction completed and persisted in MongoDB Atlas!');
-    } catch (err) {
-      console.error('API Error:', err);
-      alert('Could not connect to backend server. Make sure node server.js is running.');
-    }
+    setFormInput({ recipient: '', amount: '', pin: '', utilityType: 'DESCO Electricity', reminderTitle: '', reminderAmount: '' });
+    setActiveModal(null);
+    alert('Transaction successful!');
   };
 
   // Add Reminder Handler
@@ -228,7 +212,6 @@ export default function BankingSimulationSystem() {
               <span className="text-[#059669] font-black text-xl tracking-tighter cursor-pointer" onClick={() => setActiveTab('dashboard')}>M</span>
 
               <nav className="flex flex-col space-y-5 w-full items-center">
-                {/* Dashboard Nav Button */}
                 <button 
                   onClick={() => setActiveTab('dashboard')} 
                   className="flex flex-col items-center group w-full"
@@ -239,7 +222,6 @@ export default function BankingSimulationSystem() {
                   <span className={`text-[9px] font-medium mt-0.5 scale-90 ${activeTab === 'dashboard' ? 'text-[#059669]' : 'text-slate-400'}`}>Dashboard</span>
                 </button>
 
-                {/* Transaction Nav Button */}
                 <button 
                   onClick={() => setActiveTab('transaction')} 
                   className="flex flex-col items-center group w-full"
@@ -250,7 +232,6 @@ export default function BankingSimulationSystem() {
                   <span className={`text-[9px] font-medium mt-0.5 scale-90 ${activeTab === 'transaction' ? 'text-[#059669]' : 'text-slate-400'}`}>Transaction</span>
                 </button>
 
-                {/* Deposit Nav Button */}
                 <button 
                   onClick={() => setActiveTab('deposit')} 
                   className="flex flex-col items-center group w-full"
@@ -261,7 +242,6 @@ export default function BankingSimulationSystem() {
                   <span className={`text-[9px] font-medium mt-0.5 scale-90 ${activeTab === 'deposit' ? 'text-[#059669]' : 'text-slate-400'}`}>Deposit</span>
                 </button>
 
-                {/* Settings / EMI Nav Button */}
                 <button 
                   onClick={() => setActiveTab('settings')} 
                   className="flex flex-col items-center group w-full"
@@ -282,14 +262,14 @@ export default function BankingSimulationSystem() {
             <div className="flex items-center justify-between pb-6">
               <div>
                 <h1 className="text-lg font-bold text-slate-900 capitalize">{activeTab}</h1>
-                <p className="text-[10px] text-slate-400">Authenticated Session • {accountHolder} (ID: {CURRENT_ACCOUNT_NUMBER})</p>
+                <p className="text-[10px] text-slate-400">Authenticated Session • Demo User (ID: {CURRENT_ACCOUNT_NUMBER})</p>
               </div>
 
               <div className="flex items-center space-x-3">
                 <span className="w-6 h-6 rounded-full bg-rose-50 flex items-center justify-center text-xs cursor-pointer">🔔</span>
                 <span className="w-6 h-6 rounded-full bg-amber-50 flex items-center justify-center text-xs cursor-pointer">⭐</span>
                 <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-                  {accountHolder ? accountHolder[0].toUpperCase() : 'U'}
+                  U
                 </div>
               </div>
             </div>
@@ -297,9 +277,7 @@ export default function BankingSimulationSystem() {
             {/* TAB VIEW 1: Main Dashboard */}
             {activeTab === 'dashboard' && (
               <>
-                {/* Top Balance Cards Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                  {/* Current Balance Card */}
                   <div className="h-40 rounded-2xl p-5 text-white bg-[#039868] relative overflow-hidden flex flex-col justify-between shadow-sm">
                     <div className="absolute right-4 top-4 text-white/90 text-xl font-black">
                       M
@@ -329,7 +307,6 @@ export default function BankingSimulationSystem() {
                     </div>
                   </div>
 
-                  {/* Deposit Interest / Virtual Wallet Card */}
                   <div className="h-40 rounded-2xl p-5 bg-white border border-slate-100 shadow-sm flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-slate-400 font-medium block">Virtual Wallet Balance</span>
@@ -354,7 +331,6 @@ export default function BankingSimulationSystem() {
                   </div>
                 </div>
 
-                {/* Income / Expense Analytics Panel */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm mb-5">
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div className="flex items-center space-x-8">
@@ -384,7 +360,6 @@ export default function BankingSimulationSystem() {
                     </div>
                   </div>
 
-                  {/* Grouped Bar Chart */}
                   <div className="h-28 flex items-end justify-between px-6 pt-4 border-b border-slate-50 pb-2">
                     {[
                       { week: 'Week 1', inc: 70, exp: 35 },
@@ -403,7 +378,6 @@ export default function BankingSimulationSystem() {
                   </div>
                 </div>
 
-                {/* History Transaction */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
                   <div className="flex justify-between items-center mb-3">
                     <h2 className="font-bold text-xs text-slate-900">History Transaction</h2>
@@ -594,7 +568,6 @@ export default function BankingSimulationSystem() {
                 </button>
               </div>
 
-              {/* February 2022 Calendar */}
               <div className="border border-slate-100 rounded-xl p-3 mb-5">
                 <div className="flex justify-between items-center mb-3 text-[11px] font-semibold text-slate-700">
                   <span className="flex items-center cursor-pointer">
@@ -622,7 +595,6 @@ export default function BankingSimulationSystem() {
                 </div>
               </div>
 
-              {/* Reminder Items */}
               <div className="text-[10px] font-bold text-slate-800 mb-3">10 February 2022</div>
               <div className="space-y-3">
                 {reminders.map((rem) => (
@@ -642,7 +614,6 @@ export default function BankingSimulationSystem() {
               </div>
             </div>
 
-            {/* Add Remainder Action Button */}
             <button 
               onClick={() => setActiveModal('reminder')}
               className="w-full mt-6 bg-[#059669] hover:bg-[#047857] text-white py-2.5 rounded-xl text-xs font-semibold shadow-sm transition"
