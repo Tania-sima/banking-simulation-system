@@ -10,23 +10,89 @@ import {
   Eye, 
   EyeOff, 
   Search, 
-  Send,
-  Smartphone,
-  CreditCard,
-  Building2,
-  Wallet,
-  Receipt,
-  UserCheck,
-  CheckCircle2,
-  AlertCircle,
+  Send, 
+  Smartphone, 
+  Receipt, 
+  UserCheck, 
+  Building2, 
+  Wallet, 
+  Menu, 
   X,
-  Menu
+  CreditCard
 } from 'lucide-react';
 
 const CURRENT_ACCOUNT_NUMBER = '6789';
 const DEFAULT_PIN = '1234';
 
-// Realistic Beneficiary List for Tracking and Quick Selection
+// Custom Unity Pay Scalable Vector Logo Component
+const UnityPayLogo = ({ showTagline = true, iconSize = 38, textSize = "text-xl" }) => (
+  <div className="flex items-center space-x-3 select-none">
+    {/* Swirling Ribbon Vector Icon */}
+    <svg 
+      width={iconSize} 
+      height={iconSize} 
+      viewBox="0 0 100 100" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0 drop-shadow-xs"
+    >
+      <defs>
+        <linearGradient id="upNavyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0B2545" />
+          <stop offset="100%" stopColor="#134074" />
+        </linearGradient>
+        <linearGradient id="upBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1D63B8" />
+          <stop offset="100%" stopColor="#0077B6" />
+        </linearGradient>
+        <linearGradient id="upTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#00A896" />
+          <stop offset="100%" stopColor="#028090" />
+        </linearGradient>
+        <linearGradient id="upCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#05B292" />
+          <stop offset="100%" stopColor="#00C49F" />
+        </linearGradient>
+      </defs>
+
+      {/* Outer Deep Navy Crest */}
+      <path 
+        d="M 50 8 C 73 8 92 27 92 50 C 92 65 84 78 72 85 C 80 77 82 63 80 52 C 78 35 63 20 45 20 C 37 20 28 23 22 28 C 30 16 39 8 50 8 Z" 
+        fill="url(#upNavyGrad)" 
+      />
+      {/* Mid Ocean Blue Ribbon */}
+      <path 
+        d="M 22 28 C 13 36 8 47 8 60 C 8 78 22 92 40 92 C 55 92 68 83 74 70 C 65 77 53 79 42 77 C 28 74 19 62 20 48 C 20 41 21 34 22 28 Z" 
+        fill="url(#upBlueGrad)" 
+      />
+      {/* Dynamic S-Curve Center Cyan Ribbon */}
+      <path 
+        d="M 45 20 C 62 20 74 34 72 50 C 70 63 59 73 45 74 C 34 75 25 68 25 57 C 25 48 32 41 40 40 C 50 39 58 45 57 53 C 56 59 50 63 45 63 C 51 63 54 57 54 52 C 54 47 48 44 42 45 C 36 46 32 51 32 57 C 32 64 39 69 47 68 C 57 67 65 59 66 49 C 68 36 57 26 44 26 C 36 26 30 29 25 33 C 31 25 37 20 45 20 Z" 
+        fill="url(#upTealGrad)" 
+      />
+      {/* Lower Wing Accent Ribbon */}
+      <path 
+        d="M 74 70 C 68 83 55 92 40 92 C 48 92 58 87 64 80 C 70 73 72 65 72 56 C 72 62 73 66 74 70 Z" 
+        fill="url(#upCyanGrad)" 
+      />
+    </svg>
+
+    {/* Brand Text Header */}
+    <div className="flex flex-col leading-none">
+      <div className={`font-black tracking-tight ${textSize} flex items-center`}>
+        <span className="text-[#0B2545]">Unity</span>
+        <span className="text-[#028090] ml-1">Pay</span>
+      </div>
+      {showTagline && (
+        <span className="text-[7.5px] font-bold text-slate-400 tracking-[0.22em] uppercase mt-0.5">
+          SECURE • SEAMLESS • TRUSTED
+        </span>
+      )}
+    </div>
+  </div>
+);
+
+// Beneficiary Accounts
 const BENEFICIARY_ACCOUNTS = [
   { id: 'b1', name: 'Global Ventures Ltd', accountNo: '20491823901', channel: 'Bank', bankName: 'City Bank Ltd' },
   { id: 'b2', name: 'Tanvir Ahmed', accountNo: '01711002233', channel: 'Wallet', bankName: 'bKash Personal' },
@@ -39,7 +105,7 @@ export default function BankingSimulationSystem() {
   const [showBalance, setShowBalance] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Balances stored directly in React State (with localStorage persistence)
+  // Balances stored directly in React State
   const [bankBalance, setBankBalance] = useState(() => {
     const saved = localStorage.getItem('bank_sim_bankBalance');
     return saved !== null ? parseFloat(saved) : 10750000;
@@ -92,8 +158,8 @@ export default function BankingSimulationSystem() {
   // Modal State
   const [activeModal, setActiveModal] = useState(null);
   const [formInput, setFormInput] = useState({
-    sendChannel: 'bank_to_bank', // 'bank_to_bank' | 'bank_to_wallet' | 'wallet_to_bank' | 'wallet_to_wallet'
-    addChannel: 'bank_to_wallet', // 'bank_to_wallet' | 'wallet_to_bank'
+    sendChannel: 'bank_to_bank',
+    addChannel: 'bank_to_wallet',
     recipient: '',
     recipientName: '',
     amount: '',
@@ -122,7 +188,7 @@ export default function BankingSimulationSystem() {
   const handleExecuteTransaction = (e) => {
     e.preventDefault();
     const val = parseFloat(formInput.amount);
-    if (!val || val <= 0) return alert('Please enter a valid transfer amount.');
+    if (!val || val <= 0) return alert('Please enter a valid amount.');
 
     if (formInput.pin !== DEFAULT_PIN) {
       return alert(`Incorrect Security PIN. Default PIN is ${DEFAULT_PIN}`);
@@ -170,7 +236,7 @@ export default function BankingSimulationSystem() {
       const channel = formInput.addChannel;
 
       if (channel === 'bank_to_wallet') {
-        if (bankBalance < val) return alert('Insufficient Bank Balance to transfer to Wallet.');
+        if (bankBalance < val) return alert('Insufficient Bank Balance.');
         setBankBalance(prev => prev - val);
         setWalletBalance(prev => prev + val);
         setTransactions(prev => [
@@ -178,11 +244,11 @@ export default function BankingSimulationSystem() {
           ...prev
         ]);
       } else if (channel === 'wallet_to_bank') {
-        if (walletBalance < val) return alert('Insufficient Wallet Balance to sweep to Bank.');
+        if (walletBalance < val) return alert('Insufficient Wallet Balance.');
         setWalletBalance(prev => prev - val);
         setBankBalance(prev => prev + val);
         setTransactions(prev => [
-          { id: Date.now(), name: 'Wallet Sweep', category: 'Wallet → Bank Fund Return', source: 'Bank Account', date: nowFormatted, amount: val, type: 'Income' },
+          { id: Date.now(), name: 'Wallet Sweep', category: 'Wallet → Bank Fund Sweep', source: 'Bank Account', date: nowFormatted, amount: val, type: 'Income' },
           ...prev
         ]);
       }
@@ -205,7 +271,7 @@ export default function BankingSimulationSystem() {
         ...prev
       ]);
     }
-    // 5. REALISTIC BILL PAY
+    // 5. BILL PAY
     else if (activeModal === 'bill') {
       if (formInput.billSource === 'Bank Account') {
         if (bankBalance < val) return alert('Insufficient Bank Balance to pay bill.');
@@ -264,10 +330,10 @@ export default function BankingSimulationSystem() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-white text-slate-800 flex flex-col font-sans antialiased">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans antialiased">
       
       {/* Edge-to-Edge Navigation Header */}
-      <header className="w-full bg-white border-b border-slate-100 px-4 lg:px-8 py-3.5 flex items-center justify-between sticky top-0 z-30">
+      <header className="w-full bg-white border-b border-slate-200/80 px-4 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center space-x-4">
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
@@ -275,15 +341,15 @@ export default function BankingSimulationSystem() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setActiveTab('transaction')}>
-            <span className="text-[#059669] font-black text-2xl tracking-tighter">M</span>
-            <span className="font-bold text-slate-900 text-sm hidden sm:inline-block">MetroBank Digital</span>
+          
+          <div className="cursor-pointer" onClick={() => setActiveTab('transaction')}>
+            <UnityPayLogo showTagline={true} iconSize={36} textSize="text-xl" />
           </div>
         </div>
 
         <div className="hidden sm:flex flex-1 max-w-md mx-6">
-          <div className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-1.5 flex items-center space-x-2 text-xs text-slate-400 focus-within:border-emerald-500">
-            <Search className="w-3.5 h-3.5" />
+          <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 flex items-center space-x-2 text-xs text-slate-400 focus-within:border-[#028090] focus-within:bg-white transition">
+            <Search className="w-3.5 h-3.5 text-[#028090]" />
             <input 
               type="text" 
               placeholder="Search beneficiary, transaction ID, or biller..." 
@@ -295,13 +361,15 @@ export default function BankingSimulationSystem() {
         <div className="flex items-center space-x-3">
           <button 
             onClick={() => setActiveModal('bill')} 
-            className="hidden sm:flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#059669] px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+            className="hidden sm:flex items-center space-x-1.5 bg-[#028090]/10 hover:bg-[#028090]/20 text-[#028090] px-3.5 py-1.5 rounded-xl text-xs font-semibold transition"
           >
             <Receipt className="w-3.5 h-3.5" />
             <span>Pay Bill</span>
           </button>
-          <span className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-xs cursor-pointer">🔔</span>
-          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
+          <span className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900 flex items-center justify-center text-xs cursor-pointer">
+            🔔
+          </span>
+          <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#0B2545] to-[#028090] text-white flex items-center justify-center text-xs font-bold shadow-xs">
             TA
           </div>
         </div>
@@ -311,11 +379,11 @@ export default function BankingSimulationSystem() {
       <div className="flex-1 flex flex-col md:flex-row w-full">
         
         {/* Left Vertical Menu */}
-        <aside className={`${mobileMenuOpen ? 'block' : 'hidden'} md:flex w-full md:w-20 lg:w-56 border-r border-slate-100 flex-col py-6 bg-white shrink-0`}>
-          <nav className="flex flex-col space-y-1 px-3 w-full">
+        <aside className={`${mobileMenuOpen ? 'block' : 'hidden'} md:flex w-full md:w-20 lg:w-56 border-r border-slate-200/80 flex-col py-6 bg-white shrink-0`}>
+          <nav className="flex flex-col space-y-1.5 px-3 w-full">
             <button 
               onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }} 
-              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'dashboard' ? 'bg-emerald-50 text-[#059669] font-bold' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'dashboard' ? 'bg-[#028090]/10 text-[#028090] font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
             >
               <LayoutDashboard className="w-4 h-4 shrink-0" />
               <span className="md:hidden lg:inline-block">Dashboard</span>
@@ -323,7 +391,7 @@ export default function BankingSimulationSystem() {
 
             <button 
               onClick={() => { setActiveTab('transaction'); setMobileMenuOpen(false); }} 
-              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'transaction' ? 'bg-emerald-50 text-[#059669] font-bold' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'transaction' ? 'bg-[#028090]/10 text-[#028090] font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
             >
               <ArrowRightLeft className="w-4 h-4 shrink-0" />
               <span className="md:hidden lg:inline-block">Transaction</span>
@@ -331,7 +399,7 @@ export default function BankingSimulationSystem() {
 
             <button 
               onClick={() => { setActiveTab('deposit'); setMobileMenuOpen(false); }} 
-              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'deposit' ? 'bg-emerald-50 text-[#059669] font-bold' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'deposit' ? 'bg-[#028090]/10 text-[#028090] font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
             >
               <PiggyBank className="w-4 h-4 shrink-0" />
               <span className="md:hidden lg:inline-block">Deposit</span>
@@ -339,7 +407,7 @@ export default function BankingSimulationSystem() {
 
             <button 
               onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }} 
-              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'settings' ? 'bg-emerald-50 text-[#059669] font-bold' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${activeTab === 'settings' ? 'bg-[#028090]/10 text-[#028090] font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
             >
               <Settings className="w-4 h-4 shrink-0" />
               <span className="md:hidden lg:inline-block">Setting</span>
@@ -347,21 +415,18 @@ export default function BankingSimulationSystem() {
           </nav>
         </aside>
 
-        {/* Center Canvas */}
+        {/* Center Main Workspace */}
         <main className="flex-1 p-4 lg:p-8 flex flex-col bg-white overflow-x-hidden">
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-2">
             <div>
-              <h1 className="text-xl font-bold text-slate-900 capitalize">{activeTab}</h1>
-              <p className="text-xs text-slate-400">Authenticated Session • Demo User (ID: {CURRENT_ACCOUNT_NUMBER})</p>
+              <h1 className="text-xl font-bold text-[#0B2545] capitalize">{activeTab}</h1>
+              <p className="text-xs text-slate-400">Unity Pay Verified • Account #{CURRENT_ACCOUNT_NUMBER}</p>
             </div>
 
-            <div className="flex items-center space-x-3 self-end sm:self-auto">
-              <span className="w-6 h-6 rounded-full bg-rose-50 flex items-center justify-center text-xs">🔔</span>
-              <span className="w-6 h-6 rounded-full bg-amber-50 flex items-center justify-center text-xs">⭐</span>
-              <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-                U
-              </div>
+            <div className="flex items-center space-x-2 self-end sm:self-auto bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[11px] text-slate-600 font-medium">Secured by UnityShield</span>
             </div>
           </div>
 
@@ -369,29 +434,29 @@ export default function BankingSimulationSystem() {
           {activeTab === 'transaction' && (
             <div className="space-y-6">
               
-              {/* Quick Action Grid */}
+              {/* Quick Action Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
                 <button 
                   onClick={() => setActiveModal('send')} 
-                  className="p-4 rounded-2xl border border-slate-100 hover:border-emerald-400 bg-slate-50/40 hover:bg-white text-left transition shadow-xs group"
+                  className="p-4 rounded-2xl border border-slate-100 hover:border-[#028090] bg-slate-50/50 hover:bg-white text-left transition shadow-xs group"
                 >
-                  <Send className="w-5 h-5 text-[#059669] mb-2 group-hover:scale-110 transition" />
+                  <Send className="w-5 h-5 text-[#028090] mb-2 group-hover:scale-110 transition" />
                   <p className="text-xs font-bold text-slate-900">Send Money</p>
                   <p className="text-[11px] text-slate-400">4 Transfer Options</p>
                 </button>
 
                 <button 
                   onClick={() => setActiveModal('add')} 
-                  className="p-4 rounded-2xl border border-slate-100 hover:border-emerald-400 bg-slate-50/40 hover:bg-white text-left transition shadow-xs group"
+                  className="p-4 rounded-2xl border border-slate-100 hover:border-[#0077B6] bg-slate-50/50 hover:bg-white text-left transition shadow-xs group"
                 >
-                  <PiggyBank className="w-5 h-5 text-emerald-600 mb-2 group-hover:scale-110 transition" />
+                  <PiggyBank className="w-5 h-5 text-[#0077B6] mb-2 group-hover:scale-110 transition" />
                   <p className="text-xs font-bold text-slate-900">Add Money</p>
-                  <p className="text-[11px] text-slate-400">2 Way Top-Up / Sweep</p>
+                  <p className="text-[11px] text-slate-400">2-Way Top-Up / Sweep</p>
                 </button>
 
                 <button 
                   onClick={() => setActiveModal('cashout')} 
-                  className="p-4 rounded-2xl border border-slate-100 hover:border-amber-400 bg-slate-50/40 hover:bg-white text-left transition shadow-xs group"
+                  className="p-4 rounded-2xl border border-slate-100 hover:border-amber-400 bg-slate-50/50 hover:bg-white text-left transition shadow-xs group"
                 >
                   <ArrowRightLeft className="w-5 h-5 text-amber-500 mb-2 group-hover:scale-110 transition" />
                   <p className="text-xs font-bold text-slate-900">Cash Out</p>
@@ -400,22 +465,22 @@ export default function BankingSimulationSystem() {
 
                 <button 
                   onClick={() => setActiveModal('recharge')} 
-                  className="p-4 rounded-2xl border border-slate-100 hover:border-blue-400 bg-slate-50/40 hover:bg-white text-left transition shadow-xs group"
+                  className="p-4 rounded-2xl border border-slate-100 hover:border-[#134074] bg-slate-50/50 hover:bg-white text-left transition shadow-xs group"
                 >
-                  <Smartphone className="w-5 h-5 text-blue-500 mb-2 group-hover:scale-110 transition" />
+                  <Smartphone className="w-5 h-5 text-[#134074] mb-2 group-hover:scale-110 transition" />
                   <p className="text-xs font-bold text-slate-900">Recharge</p>
                   <p className="text-[11px] text-slate-400">Mobile Top-up</p>
                 </button>
               </div>
 
-              {/* Verified Beneficiary Tracker (Requirement 3) */}
+              {/* Verified Beneficiary Tracker */}
               <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="font-bold text-xs text-slate-900">Saved Transfer Beneficiaries</h3>
-                    <p className="text-[11px] text-slate-400">Directly transfer to regular accounts with verified tracking</p>
+                    <h3 className="font-bold text-xs text-[#0B2545]">Saved Transfer Beneficiaries</h3>
+                    <p className="text-[11px] text-slate-400">Instant routing with verified bank and wallet credentials</p>
                   </div>
-                  <UserCheck className="w-4 h-4 text-[#059669]" />
+                  <UserCheck className="w-4 h-4 text-[#028090]" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -431,10 +496,10 @@ export default function BankingSimulationSystem() {
                         }));
                         setActiveModal('send');
                       }}
-                      className="p-3 rounded-xl border border-slate-100 hover:border-emerald-300 bg-slate-50/50 hover:bg-emerald-50/30 cursor-pointer transition flex flex-col justify-between"
+                      className="p-3.5 rounded-xl border border-slate-100 hover:border-[#028090] bg-slate-50/40 hover:bg-[#028090]/5 cursor-pointer transition flex flex-col justify-between"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${acc.channel === 'Bank' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${acc.channel === 'Bank' ? 'bg-[#0B2545]/10 text-[#0B2545]' : 'bg-[#028090]/15 text-[#028090]'}`}>
                           {acc.channel}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">{acc.bankName}</span>
@@ -446,11 +511,11 @@ export default function BankingSimulationSystem() {
                 </div>
               </div>
 
-              {/* Transactions Table with Responsive Scroll */}
+              {/* All Recorded Transactions Table */}
               <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-bold text-xs text-slate-900">All Recorded Transactions</h2>
-                  <span className="text-[10px] text-slate-400">Total: {transactions.length} Records</span>
+                  <h2 className="font-bold text-xs text-[#0B2545]">All Recorded Transactions</h2>
+                  <span className="text-[10px] text-slate-400 font-medium">Total: {transactions.length} Records</span>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -467,14 +532,14 @@ export default function BankingSimulationSystem() {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {transactions.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-50/40 transition">
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition">
                           <td className="py-3 font-medium text-slate-800">{item.name}</td>
                           <td className="py-3 text-slate-500 text-[11px]">{item.category || 'Transfer'}</td>
                           <td className="py-3 text-slate-400 text-[11px]">{item.source}</td>
                           <td className="py-3 text-slate-400 text-[11px]">{item.date}</td>
-                          <td className="py-3 font-bold text-slate-800">Rp {item.amount.toLocaleString('id-ID')}</td>
+                          <td className="py-3 font-bold text-slate-900">Rp {item.amount.toLocaleString('id-ID')}</td>
                           <td className="py-3 text-right">
-                            <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${item.type === 'Income' ? 'bg-emerald-50 text-[#059669]' : 'bg-rose-50 text-[#e11d48]'}`}>
+                            <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${item.type === 'Income' ? 'bg-[#028090]/15 text-[#028090]' : 'bg-rose-50 text-rose-600'}`}>
                               {item.type}
                             </span>
                           </td>
@@ -492,22 +557,28 @@ export default function BankingSimulationSystem() {
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="h-44 rounded-2xl p-6 text-white bg-[#039868] relative overflow-hidden flex flex-col justify-between shadow-sm">
-                  <div className="absolute right-5 top-5 text-white/90 text-2xl font-black">M</div>
+                
+                {/* Brand Navy-Cyan Gradient Card */}
+                <div className="h-44 rounded-2xl p-6 text-white bg-linear-to-br from-[#0B2545] via-[#134074] to-[#028090] relative overflow-hidden flex flex-col justify-between shadow-md">
+                  <div className="absolute right-5 top-5 opacity-30">
+                    <UnityPayLogo showTagline={false} iconSize={42} textSize="text-white" />
+                  </div>
+                  <div className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full border-12 border-white/5 pointer-events-none"></div>
+
                   <div>
-                    <span className="text-xs text-emerald-100 font-medium block">Current Balance</span>
+                    <span className="text-xs text-cyan-200 font-medium block">Current Balance</span>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className="text-2xl font-bold tracking-tight">
                         {showBalance ? `Rp ${bankBalance.toLocaleString('id-ID')}` : "Rp ••••••••••"}
                       </span>
-                      <button onClick={() => setShowBalance(!showBalance)} className="text-emerald-200 hover:text-white transition">
+                      <button onClick={() => setShowBalance(!showBalance)} className="text-cyan-200 hover:text-white transition">
                         {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
                   <div className="flex justify-between items-center z-10">
-                    <span className="font-mono text-xs tracking-wider text-emerald-100">•••• •••• •••• {CURRENT_ACCOUNT_NUMBER}</span>
-                    <button onClick={() => setActiveModal('send')} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
+                    <span className="font-mono text-xs tracking-wider text-cyan-100">•••• •••• •••• {CURRENT_ACCOUNT_NUMBER}</span>
+                    <button onClick={() => setActiveModal('send')} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3.5 py-1.5 rounded-lg transition font-medium">
                       Transfer
                     </button>
                   </div>
@@ -516,20 +587,20 @@ export default function BankingSimulationSystem() {
                 <div className="h-44 rounded-2xl p-6 bg-white border border-slate-100 shadow-sm flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400 font-medium block">Virtual Wallet Balance</span>
-                    <div className="text-2xl font-bold text-slate-900 mt-1">
+                    <div className="text-2xl font-bold text-[#0B2545] mt-1">
                       Rp {walletBalance.toLocaleString('id-ID')}
                     </div>
                     <div className="flex space-x-2.5 mt-4">
-                      <button onClick={() => setActiveModal('add')} className="bg-emerald-50 hover:bg-emerald-100 text-[#059669] text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                      <button onClick={() => setActiveModal('add')} className="bg-[#028090]/10 hover:bg-[#028090]/20 text-[#028090] text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
                         + Top Up
                       </button>
-                      <button onClick={() => setActiveModal('cashout')} className="bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                      <button onClick={() => setActiveModal('cashout')} className="bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
                         Cash Out
                       </button>
                     </div>
                   </div>
-                  <div className="w-20 h-20 rounded-2xl bg-emerald-50/60 flex items-center justify-center text-3xl">
-                    🌱
+                  <div className="w-20 h-20 rounded-2xl bg-[#028090]/10 flex items-center justify-center text-3xl">
+                    💳
                   </div>
                 </div>
               </div>
@@ -541,10 +612,10 @@ export default function BankingSimulationSystem() {
             <div className="border border-slate-100 rounded-2xl p-6 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-xs text-slate-500 font-medium">Accumulated Deposit Interest</span>
-                <h2 className="text-3xl font-black text-slate-900 mt-1">Rp 250.000</h2>
-                <p className="text-xs text-emerald-600 mt-1">Auto-compounding active on Savings account</p>
+                <h2 className="text-3xl font-black text-[#0B2545] mt-1">Rp 250.000</h2>
+                <p className="text-xs text-[#028090] mt-1 font-medium">Auto-compounding active on Unity Savings Account</p>
               </div>
-              <button onClick={() => setActiveModal('add')} className="bg-[#059669] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-xs self-start sm:self-auto">
+              <button onClick={() => setActiveModal('add')} className="bg-[#028090] hover:bg-[#0077B6] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-xs self-start sm:self-auto transition">
                 Deposit Funds
               </button>
             </div>
@@ -553,7 +624,7 @@ export default function BankingSimulationSystem() {
           {/* VIEW: Settings / EMI */}
           {activeTab === 'settings' && (
             <div className="max-w-xl mx-auto w-full bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-4">
-              <h2 className="font-bold text-sm text-slate-900">EMI & Loan Installment Calculator</h2>
+              <h2 className="font-bold text-sm text-[#0B2545]">Unity Pay EMI & Loan Calculator</h2>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase">Loan Principal (Rp)</label>
@@ -561,7 +632,7 @@ export default function BankingSimulationSystem() {
                     type="number" 
                     value={loanAmount} 
                     onChange={(e) => setLoanAmount(Number(e.target.value))}
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-emerald-500" 
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-[#028090]" 
                   />
                 </div>
                 <div>
@@ -571,7 +642,7 @@ export default function BankingSimulationSystem() {
                     step="0.1" 
                     value={loanRate} 
                     onChange={(e) => setLoanRate(Number(e.target.value))}
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-emerald-500" 
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-[#028090]" 
                   />
                 </div>
                 <div>
@@ -580,16 +651,16 @@ export default function BankingSimulationSystem() {
                     type="number" 
                     value={loanYears} 
                     onChange={(e) => setLoanYears(Number(e.target.value))}
-                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-emerald-500" 
+                    className="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-[#028090]" 
                   />
                 </div>
               </div>
-              <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-center justify-between">
+              <div className="bg-[#028090]/10 p-4 rounded-xl border border-[#028090]/20 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-emerald-800">Monthly EMI</p>
-                  <p className="text-xl font-bold text-[#059669]">Rp {calculateEMI()}</p>
+                  <p className="text-xs font-semibold text-[#0B2545]">Estimated Monthly Installment</p>
+                  <p className="text-xl font-bold text-[#028090]">Rp {calculateEMI()}</p>
                 </div>
-                <span className="text-xs text-emerald-700 bg-white px-2.5 py-1 rounded-md font-medium">Standard Formula</span>
+                <span className="text-xs text-[#028090] bg-white px-2.5 py-1 rounded-md font-semibold">Standard Formula</span>
               </div>
             </div>
           )}
@@ -597,11 +668,11 @@ export default function BankingSimulationSystem() {
         </main>
 
         {/* Right Sidebar: Upcoming Transactions & Calendar */}
-        <aside className="w-full md:w-72 lg:w-80 border-t md:border-t-0 md:border-l border-slate-100 p-6 flex flex-col justify-between bg-white shrink-0">
+        <aside className="w-full md:w-72 lg:w-80 border-t md:border-t-0 md:border-l border-slate-200/80 p-6 flex flex-col justify-between bg-white shrink-0">
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-sm text-slate-900">Upcoming Transaction</h2>
-              <button onClick={() => setActiveModal('bill')} className="text-xs font-bold text-[#059669] hover:underline flex items-center space-x-1">
+              <h2 className="font-bold text-sm text-[#0B2545]">Upcoming Transaction</h2>
+              <button onClick={() => setActiveModal('bill')} className="text-xs font-bold text-[#028090] hover:underline flex items-center space-x-1">
                 <Receipt className="w-3.5 h-3.5" />
                 <span>Pay Bill</span>
               </button>
@@ -609,7 +680,7 @@ export default function BankingSimulationSystem() {
 
             <div className="border border-slate-100 rounded-2xl p-4 mb-5 shadow-xs">
               <div className="flex justify-between items-center mb-3 text-xs font-semibold text-slate-700">
-                <span className="flex items-center cursor-pointer">
+                <span className="flex items-center cursor-pointer text-[#0B2545]">
                   October 2026 <ChevronDown className="w-3.5 h-3.5 ml-1 text-slate-400" />
                 </span>
                 <div className="flex space-x-1 text-slate-400">
@@ -626,7 +697,7 @@ export default function BankingSimulationSystem() {
                 <span>6</span>
                 <span className="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center mx-auto text-[10px]">8</span>
                 <span>9</span>
-                <span className="w-6 h-6 rounded-full bg-[#059669] text-white flex items-center justify-center mx-auto text-[10px] font-bold">10</span>
+                <span className="w-6 h-6 rounded-full bg-[#028090] text-white flex items-center justify-center mx-auto text-[10px] font-bold">10</span>
                 <span>11</span><span>12</span><span>13</span>
                 <span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span>
                 <span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span>
@@ -639,7 +710,7 @@ export default function BankingSimulationSystem() {
               {reminders.map((rem) => (
                 <div key={rem.id} className="flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-2.5">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${rem.type === 'credit' ? 'bg-emerald-50 text-[#059669]' : 'bg-rose-50 text-[#e11d48]'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${rem.type === 'credit' ? 'bg-[#028090]/15 text-[#028090]' : 'bg-rose-50 text-rose-600'}`}>
                       💼
                     </div>
                     <div>
@@ -655,9 +726,9 @@ export default function BankingSimulationSystem() {
 
           <button 
             onClick={() => setActiveModal('reminder')}
-            className="w-full mt-6 bg-[#059669] hover:bg-[#047857] text-white py-2.5 rounded-xl text-xs font-semibold shadow-xs transition"
+            className="w-full mt-6 bg-[#0B2545] hover:bg-[#134074] text-white py-2.5 rounded-xl text-xs font-semibold shadow-xs transition"
           >
-            Add Remainder
+            Add Reminder
           </button>
         </aside>
 
@@ -669,7 +740,7 @@ export default function BankingSimulationSystem() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 my-8">
             
             <div className="flex justify-between items-center mb-5">
-              <h3 className="font-bold text-base text-slate-900">
+              <h3 className="font-bold text-base text-[#0B2545]">
                 {activeModal === 'send' && 'Send Money (Transfer)'}
                 {activeModal === 'add' && 'Add Money (Top-Up / Sweep)'}
                 {activeModal === 'cashout' && 'Cash Out (Wallet Agent)'}
@@ -688,10 +759,10 @@ export default function BankingSimulationSystem() {
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. Internet Bill / Rent" 
+                    placeholder="e.g. Broadband Fiber / Rent" 
                     value={formInput.reminderTitle}
                     onChange={(e) => setFormInput({ ...formInput, reminderTitle: e.target.value })}
-                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-emerald-500" 
+                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-[#028090]" 
                   />
                 </div>
                 <div>
@@ -702,14 +773,14 @@ export default function BankingSimulationSystem() {
                     placeholder="e.g. 150000" 
                     value={formInput.reminderAmount}
                     onChange={(e) => setFormInput({ ...formInput, reminderAmount: e.target.value })}
-                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-emerald-500" 
+                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-[#028090]" 
                   />
                 </div>
                 <div className="flex space-x-2 pt-2">
                   <button type="button" onClick={() => setActiveModal(null)} className="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl text-xs font-semibold">
                     Cancel
                   </button>
-                  <button type="submit" className="flex-1 bg-[#059669] text-white py-2.5 rounded-xl text-xs font-semibold">
+                  <button type="submit" className="flex-1 bg-[#028090] text-white py-2.5 rounded-xl text-xs font-semibold">
                     Save Reminder
                   </button>
                 </div>
@@ -737,7 +808,7 @@ export default function BankingSimulationSystem() {
                             onClick={() => setFormInput({ ...formInput, sendChannel: item.id })}
                             className={`flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl border text-xs font-medium transition ${
                               isSelected 
-                                ? 'bg-emerald-50 border-[#059669] text-[#059669] font-bold shadow-xs' 
+                                ? 'bg-[#028090]/10 border-[#028090] text-[#028090] font-bold shadow-xs' 
                                 : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                           >
@@ -753,14 +824,14 @@ export default function BankingSimulationSystem() {
                 {/* 2. ADD MONEY: 2 Channels */}
                 {activeModal === 'add' && (
                   <div>
-                    <label className="text-xs font-bold text-slate-600 mb-2 block">Transfer Source & Destination</label>
+                    <label className="text-xs font-bold text-slate-600 mb-2 block">Transfer Direction</label>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <button
                         type="button"
                         onClick={() => setFormInput({ ...formInput, addChannel: 'bank_to_wallet' })}
                         className={`flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl border font-medium transition ${
                           formInput.addChannel === 'bank_to_wallet'
-                            ? 'bg-emerald-50 border-[#059669] text-[#059669] font-bold shadow-xs'
+                            ? 'bg-[#028090]/10 border-[#028090] text-[#028090] font-bold shadow-xs'
                             : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
@@ -773,7 +844,7 @@ export default function BankingSimulationSystem() {
                         onClick={() => setFormInput({ ...formInput, addChannel: 'wallet_to_bank' })}
                         className={`flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl border font-medium transition ${
                           formInput.addChannel === 'wallet_to_bank'
-                            ? 'bg-emerald-50 border-[#059669] text-[#059669] font-bold shadow-xs'
+                            ? 'bg-[#028090]/10 border-[#028090] text-[#028090] font-bold shadow-xs'
                             : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
@@ -784,16 +855,16 @@ export default function BankingSimulationSystem() {
                   </div>
                 )}
 
-                {/* 7. REALISTIC BILL PAYMENT FIELDS */}
+                {/* BILL PAYMENT */}
                 {activeModal === 'bill' ? (
                   <>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-bold text-slate-600">Utility Biller</label>
+                        <label className="text-xs font-bold text-slate-600">Utility Provider</label>
                         <select 
                           value={formInput.utilityProvider} 
                           onChange={(e) => setFormInput({ ...formInput, utilityProvider: e.target.value })}
-                          className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 bg-white"
+                          className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-[#028090] bg-white"
                         >
                           <option>DESCO Electricity</option>
                           <option>Dhaka WASA Water</option>
@@ -807,7 +878,7 @@ export default function BankingSimulationSystem() {
                         <select 
                           value={formInput.billSource} 
                           onChange={(e) => setFormInput({ ...formInput, billSource: e.target.value })}
-                          className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-emerald-500 bg-white"
+                          className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-[#028090] bg-white"
                         >
                           <option value="Bank Account">Bank Account (Rp {bankBalance.toLocaleString('id-ID')})</option>
                           <option value="Virtual Wallet">Virtual Wallet (Rp {walletBalance.toLocaleString('id-ID')})</option>
@@ -823,7 +894,7 @@ export default function BankingSimulationSystem() {
                         placeholder="e.g. 10098471203" 
                         value={formInput.customerMeterId}
                         onChange={(e) => setFormInput({ ...formInput, customerMeterId: e.target.value })}
-                        className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-emerald-500" 
+                        className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-[#028090]" 
                       />
                     </div>
                   </>
@@ -841,7 +912,7 @@ export default function BankingSimulationSystem() {
                         placeholder={activeModal === 'send' && formInput.sendChannel.endsWith('bank') ? 'e.g. 20491823901' : 'e.g. 01711002233'}
                         value={formInput.recipient}
                         onChange={(e) => setFormInput({ ...formInput, recipient: e.target.value, recipientName: '' })}
-                        className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-emerald-500" 
+                        className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-[#028090]" 
                       />
                     </div>
                   )
@@ -855,12 +926,12 @@ export default function BankingSimulationSystem() {
                     placeholder="Enter amount" 
                     value={formInput.amount}
                     onChange={(e) => setFormInput({ ...formInput, amount: e.target.value })}
-                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-emerald-500 font-bold" 
+                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-[#028090] font-bold" 
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-600">Security PIN (Simulated)</label>
+                  <label className="text-xs font-bold text-slate-600">Security PIN</label>
                   <input 
                     type="password" 
                     maxLength={4} 
@@ -868,7 +939,7 @@ export default function BankingSimulationSystem() {
                     placeholder="••••" 
                     value={formInput.pin}
                     onChange={(e) => setFormInput({ ...formInput, pin: e.target.value })}
-                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-emerald-500 font-mono tracking-widest text-center text-base" 
+                    className="w-full mt-1 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-[#028090] font-mono tracking-widest text-center text-base" 
                   />
                 </div>
 
@@ -876,7 +947,7 @@ export default function BankingSimulationSystem() {
                   <button type="button" onClick={() => setActiveModal(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold transition">
                     Cancel
                   </button>
-                  <button type="submit" className="flex-1 bg-[#059669] hover:bg-[#047857] text-white py-2.5 rounded-xl text-xs font-semibold shadow-xs transition">
+                  <button type="submit" className="flex-1 bg-[#028090] hover:bg-[#0077B6] text-white py-2.5 rounded-xl text-xs font-semibold shadow-xs transition">
                     Confirm & Execute
                   </button>
                 </div>
